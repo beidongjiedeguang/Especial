@@ -248,35 +248,22 @@ def awayFromToday(specDate):
     """ return how much times is left before that special day
         :param specDate: `Lunar` or `datetime` type date.
     """
-    _, specialMonth, specialDay = parseDate(specDate)
+    _, specialMonth, specialDay = parseDate2solar(specDate)
 
     solarNow = datetime.now()
     now_year, now_month, now_day = parseDate(solarNow)
-    lunarNow = Lunar.from_datetime(solarNow)
 
-    if type(specDate).__name__ == "LunarDate":
-        """LunarDate type do not support minute and second"""
-        specialDate_this_year = Lunar(now_year, specialMonth, specialDay)
-        delta_days = specialDate_this_year - lunarNow
-        if delta_days < 0:
-            specialDate_this_year = Lunar(now_year+1, specialMonth, specialDay)
-            delta_days = specialDate_this_year - lunarNow
+    specialDate_this_year = datetime(now_year, specialMonth, specialDay)
+    delta_times = specialDate_this_year - solarNow
 
-        delta_times = timedelta(days = delta_days)
-        rest = timedelta(days=1) - timedelta(hours=solarNow.hour, minutes=solarNow.minute, seconds=solarNow.second)
-        delta_times = delta_times - timedelta(days=1) + rest
-        return delta_times
+    if delta_times.days < -1:
+        one_solor_year = (datetime(now_year + 1, specialMonth, specialDay) - specialDate_this_year)
+        specialDate_next_year = specialDate_this_year + one_solor_year
+        delta_times = specialDate_next_year - solarNow
 
-    elif type(specDate).__name__ == "datetime":
-        specialDate_this_year = datetime(now_year, specialMonth, specialDay)
-        delta_times = specialDate_this_year - solarNow
-        if delta_times.days < 0:
-            one_solor_year = (datetime(now_year + 1, specialMonth, specialDay) - specialDate_this_year)
-            specialDate_next_year = specialDate_this_year + one_solor_year
-            delta_times = specialDate_next_year - solarNow
-        return timedelta(days=delta_times.days, seconds=delta_times.seconds) # In order not to show milliseconds
-    else:
-        raise ValueError("The type of 'spacialDate' should be `datetime` or `LunarDate`!")
+    return timedelta(days=delta_times.days, seconds=delta_times.seconds) # In order not to show milliseconds
+
+
 
 
 def all_in_period(all_date, period=7):
@@ -285,6 +272,7 @@ def all_in_period(all_date, period=7):
     def is_in_period(date, period=7):
         """return (True, delta_time) or (False, None)"""
         delta_time = awayFromToday(date)
+        print(delta_time, date)
         if delta_time.days <= period: # delta_time constant greater than zero
             return True, delta_time
         else:

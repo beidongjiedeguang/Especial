@@ -16,6 +16,8 @@ setup(
        name = espec.version.name ,
        version=espec.__version__,
        description = " None" ,
+       packages = find_packages(),
+       include_package_data = True,
 
        long_description=long_description,
        long_description_content_type="text/markdown",
@@ -23,7 +25,7 @@ setup(
        author_email="beidongjiedeguang@gmail.com",
        url = "https://github.com/beidongjiedeguang/festival" ,
        license = "MIT" ,
-       packages = find_packages(exclude=['tests*', 'kaldi*']),
+       
        install_requires=install_requires,
        classifiers=[
 	     'Operating System :: OS Independent',
