@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import pendulum
 from guang.Utils.date import LunarDate as Lunar
 from guang.Utils.time import beijing
 from guang.Utils.toolsFunc import dict_dotable
@@ -12,7 +13,7 @@ class Mycrony:
 
         # self.name = ''
         self.load()
-        self.__crony=  dict_dotable(self.__crony)
+        self.__crony = dict_dotable(self.__crony)
 
     def set_name(self, name):
         self.name = name
@@ -25,35 +26,37 @@ class Mycrony:
         self.__crony.setdefault(self.name, {})
         self.__crony[self.name].setdefault("birthday", {})
 
-        if lunarORsolar=="lunar":
+        if lunarORsolar == "lunar":
             lunar_date = Lunar(*date)
 
             self.__crony[self.name]["birthday"]["lunar"] = lunar_date
             solar_date = lunar_date.to_datetime()
             self.__crony[self.name]["birthday"]["_solar"] = solar_date
 
-        elif lunarORsolar=="solar":
+        elif lunarORsolar == "solar":
             solar_date = datetime(*date)
             self.__crony[self.name]["birthday"]["solar"] = solar_date
-            self.__crony[self.name]["birthday"]["_lunar"] = Lunar.from_datetime(solar_date)
+            self.__crony[self.name]["birthday"][
+                "_lunar"] = Lunar.from_datetime(solar_date)
         else:
             raise ValueError("lunarORsolar: lunar or solar")
 
-
-    def get_current_birthday(self, name, lunarORsolar="lunar", tz="bj"):
+    def get_current_birthday(self, name, lunarORsolar="lunar", tz=None):
         """
-        tz : "beijing", or otherwise
+        tz : ""Asia/Shanghai"", or otherwise
         Birth = {"lunar":self.__crony[name]["birthday"]["lunar"],
                  "solar":self.__crony[name]["birthday"]["solar"]}
         return Birth.get(lunarORsolar, None)
         """
-        solar_now = beijing.now if tz=="beijing" else datetime.now()
+        solar_now = pendulum.now(
+            tz)  # beijing.now if tz=="beijing" else datetime.now()
         lunar_now = Lunar.from_datetime(solar_now)
-        if lunarORsolar=="lunar":
+        if lunarORsolar == "lunar":
             lunar_birthday = self.__crony[name]["birthday"]["lunar"]
             year = lunar_now.lunar_year
-            return Lunar(year, lunar_birthday.lunar_month, lunar_birthday.lunar_day)
-        elif lunarORsolar=="solar":
+            return Lunar(year, lunar_birthday.lunar_month,
+                         lunar_birthday.lunar_day)
+        elif lunarORsolar == "solar":
             solar_birthday = self.__crony[name]["birthday"]["solar"]
             year = solar_now.year
             return datetime(year, solar_birthday.month, solar_birthday.day)
@@ -114,13 +117,12 @@ class Mycrony:
             birthdays.append(cls.__crony[name]["birthday"]["solar"])
         return birthdays
 
-
     def get_all_valid_birthday(self):
         """
         return [name list, birthday list]
         """
         birthdays = []
-        Names =[]
+        Names = []
         names = self.get_all_names()
         for i in names:
             try:
@@ -162,7 +164,8 @@ class Mycrony:
             return target_names
 
         else:
-            raise ValueError("The type of '--date' should be LunarDate or datetime")
+            raise ValueError(
+                "The type of '--date' should be LunarDate or datetime")
 
     def del_brithday(self, name, date):
         """
@@ -182,10 +185,10 @@ class Mycrony:
         except:
             print('The data file does not exist. A new one has been created')
             self.name = ''
+
     def save(self):
         with open("data", "wb") as fo:
             dill.dump(self.__crony, fo)
-
 
     @staticmethod
     def parseDeltaDays(delta_days):
@@ -195,8 +198,13 @@ class Mycrony:
         days = delta_days.days
         total_seconds = delta_days.seconds
         hours, res_hour = divmod(total_seconds, 3600)
-        minutes, seconds = divmod(res_hour*3600, 60)
-        return {"days":days, "hours":hours, "minutes":minutes, "seconds":seconds}
+        minutes, seconds = divmod(res_hour * 3600, 60)
+        return {
+            "days": days,
+            "hours": hours,
+            "minutes": minutes,
+            "seconds": seconds
+        }
 
     @property
     def crony(self):
@@ -214,12 +222,13 @@ def parseDate(date):
         month = date.lunar_month
         day = date.lunar_day
     elif type(date).__name__ == "datetime":
-        year=  date.year
+        year = date.year
         month = date.month
         day = date.day
     else:
-        raise ValueError("'date' invalid!" )
+        raise ValueError("'date' invalid!")
     return year, month, day
+
 
 def parseDate2solar(date):
     """parse date to solar date (datetime)
@@ -227,10 +236,11 @@ def parseDate2solar(date):
     """
     if type(date).__name__ == "LunarDate":
         date = date.to_datetime()
-    year=  date.year
+    year = date.year
     month = date.month
     day = date.day
     return year, month, day
+
 
 def delta_days(date1, date2):
     """
@@ -257,13 +267,14 @@ def awayFromToday(specDate):
     delta_times = specialDate_this_year - solarNow
 
     if delta_times.days < -1:
-        one_solor_year = (datetime(now_year + 1, specialMonth, specialDay) - specialDate_this_year)
+        one_solor_year = (datetime(now_year + 1, specialMonth, specialDay) -
+                          specialDate_this_year)
         specialDate_next_year = specialDate_this_year + one_solor_year
         delta_times = specialDate_next_year - solarNow
 
-    return timedelta(days=delta_times.days, seconds=delta_times.seconds) # In order not to show milliseconds
-
-
+    return timedelta(
+        days=delta_times.days,
+        seconds=delta_times.seconds)  # In order not to show milliseconds
 
 
 def all_in_period(all_date, period=7):
@@ -273,16 +284,18 @@ def all_in_period(all_date, period=7):
         """return (True, delta_time) or (False, None)"""
         delta_time = awayFromToday(date)
         print(delta_time, date)
-        if delta_time.days <= period: # delta_time constant greater than zero
+        if delta_time.days <= period:  # delta_time constant greater than zero
             return True, delta_time
         else:
             return False, None
+
     name_days = {}
     for name, date in zip(*all_date):
         is_true, days = is_in_period(date, period=period)
         if is_true:
             name_days[name] = [days, date]
     return name_days
+
 
 if __name__ == "__main__":
     # pass
@@ -307,6 +320,3 @@ if __name__ == "__main__":
     # print(remind_me.who_will_be_remind())
 
     # person.save()
-
-
-
