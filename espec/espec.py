@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 import pendulum
 from guang.Utils.date import LunarDate as Lunar
-from guang.Utils.time import beijing
 from guang.Utils.toolsFunc import dict_dotable
 import dill
 import os
@@ -180,14 +179,14 @@ class Mycrony:
 
     def load(self):
         try:
-            with open("data", 'rb') as fi:
+            with open(os.path.join(os.path.dirname(__file__), "data"), 'rb') as fi:
                 self.__crony = dill.load(fi)
         except:
             print('The data file does not exist. A new one has been created')
             self.name = ''
 
     def save(self):
-        with open("data", "wb") as fo:
+        with open(os.path.join(os.path.dirname(__file__), "data"), "wb") as fo:
             dill.dump(self.__crony, fo)
 
     @staticmethod
@@ -250,8 +249,9 @@ def delta_days(date1, date2):
         date1 = date1.to_datetime()
     if type(date2).__name__ == "LunarDate":
         date2 = date2.to_datetime()
-    d_dates = date2 - date1
-    return timedelta(days=d_dates.days, seconds=d_dates.seconds)
+    # d_dates = date2 - date1
+    d_dates = pendulum.from_timestamp(date2.timestamp()) - pendulum.from_timestamp(date1.timestamp())
+    return d_dates
 
 
 def awayFromToday(specDate):
